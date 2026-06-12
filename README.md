@@ -28,4 +28,5 @@ PORT=3001 npm start
 - Linux hosts use `/proc` data when available, with `os` module fallbacks for local development.
 - Disk usage is read with `df -k /`.
 - Docker status is read from `/var/run/docker.sock` when available.
-- The local service health check uses `curl http://127.0.0.1:8080/health`.
+- The local service health check targets `http://host.docker.internal:8080/health`
+  from Docker, using the compose `host.docker.internal:host-gateway` mapping.
