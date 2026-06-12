@@ -13,7 +13,7 @@ const PORT = Number(process.env.PORT || 3001);
 const HISTORY_INTERVAL_MS = 30 * 1000;
 const COLLECT_INTERVAL_MS = 1000;
 const HISTORY_WINDOW_MS = 30 * 60 * 1000;
-const HEALTH_CHECK_URL = 'http://127.0.0.1:8080/health';
+const HEALTH_CHECK_URL = process.env.STATUS_HEALTH_TARGET || 'http://127.0.0.1:8080/health';
 const DOCKER_SOCKET = '/var/run/docker.sock';
 
 const app = express();

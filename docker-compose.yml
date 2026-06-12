@@ -11,3 +11,12 @@ services:
     restart: unless-stopped
     environment:
       - PORT=3001
+      - STATUS_HEALTH_TARGET=http://sub2api:8080/health
+    networks:
+      - default
+      - sub2api-network
+
+networks:
+  sub2api-network:
+    external: true
+    name: deploy_sub2api-network
