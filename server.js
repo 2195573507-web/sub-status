@@ -338,30 +338,43 @@ async function getDockerMetrics() {
 
 async function runHealthCheck() {
   const start = Date.now();
-  try {
-    const command = `curl -s -o /dev/null -w "%{http_code} %{time_total}" --max-time 3 ${HEALTH_CHECK_URL}`;
-    const { stdout } = await execAsync(command, { timeout: 4000 });
-    const [statusRaw, timeRaw] = stdout.trim().split(/\s+/);
-    const status = Number(statusRaw);
-    const latencyMs = Number.isFinite(Number(timeRaw)) ? Math.round(Number(timeRaw) * 1000) : Date.now() - start;
-    const failed = !Number.isFinite(status) || status < 200 || status >= 400;
 
-    return {
-      name: 'sub2api (local)',
-      url: HEALTH_CHECK_URL,
-      status: Number.isFinite(status) ? status : null,
-      latency_ms: latencyMs,
-      error: failed ? `HTTP ${Number.isFinite(status) ? status : 'unknown'}` : null,
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = (status, error) => {
+      if (settled) return;
+      settled = true;
+      const failed = error || !Number.isFinite(status) || status < 200 || status >= 400;
+
+      resolve({
+        name: 'sub2api (local)',
+        url: HEALTH_CHECK_URL,
+        status: Number.isFinite(status) ? status : null,
+        latency_ms: Date.now() - start,
+        error: failed ? error || `HTTP ${Number.isFinite(status) ? status : 'unknown'}` : null,
+      });
     };
-  } catch (error) {
-    return {
-      name: 'sub2api (local)',
-      url: HEALTH_CHECK_URL,
-      status: null,
-      latency_ms: Date.now() - start,
-      error: error.message || 'health check failed',
-    };
-  }
+
+    let req;
+    try {
+      req = http.get(HEALTH_CHECK_URL, { timeout: 3000 }, (res) => {
+        const status = res.statusCode;
+        res.resume();
+        res.on('end', () => finish(status, null));
+      });
+    } catch (error) {
+      finish(null, error.message || 'health check failed');
+      return;
+    }
+
+    req.on('timeout', () => {
+      req.destroy(new Error('health check timed out'));
+    });
+    req.on('error', (error) => {
+      finish(null, error.message || 'health check failed');
+    });
+  });
 }
 
 function buildAlerts(status) {
