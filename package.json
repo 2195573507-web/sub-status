@@ -1,0 +1,1 @@
+{"name":"sub-status","version":"1.0.0","private":true,"scripts":{"start":"node server.js","test":"node -e 'console.log(\"ok\")'"},"dependencies":{"express":"^4.21.0"}}
